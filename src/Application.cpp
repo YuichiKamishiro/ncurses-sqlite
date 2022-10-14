@@ -40,6 +40,7 @@ void Application::startMenu()
 
 void Application::run()
 {
+    init();
     startMenu();
 
     while(!windowShouldClose)
