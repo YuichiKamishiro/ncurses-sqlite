@@ -19,6 +19,6 @@ target_link_libraries(run
   sqlite3
   pthread
   dl
-  curses
+  ncursesw
   )
 
