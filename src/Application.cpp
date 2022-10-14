@@ -1,7 +1,8 @@
 #include "../inc/Application.h"
+#include <cstddef>
 #include <curses.h>
 
-Application::Application(std::string nameOfDatabase) : db(nameOfDatabase) {}
+Application::Application(std::string nameOfDatabase) : db(nameOfDatabase, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE) {}
 
 void Application::quit()
 {
@@ -16,6 +17,8 @@ void Application::printInfoFromTable(std::string nameOfTable)
     SQLite::Statement query(db, "select * from " + nameOfTable);
 
     int columnCount = query.getColumnCount();
+    
+    if(columnCount <= 0) quit();
 
     int offsetY = 0;
 
@@ -23,7 +26,12 @@ void Application::printInfoFromTable(std::string nameOfTable)
     {
         for(int i = 0; i < columnCount; ++i)
         {
-            mvprintw(1 + offsetY, 1, query.getColumn(i));
+            SQLite::Column column(query.getColumn(i));
+            std::string bufStr;
+            bufStr += column.getName();
+            bufStr += ": " + column.getString();
+
+            mvprintw(1 + offsetY, 1, bufStr.c_str());
             ++offsetY;
         }
         ++offsetY;
