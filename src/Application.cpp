@@ -66,7 +66,8 @@ void Application::init()
 std::string Application::selectionTable()
 {
     clear();
-    
+    echo();
+
     timeout(-1);
 
     mvprintw(1, 1, "Enter table name: ");
