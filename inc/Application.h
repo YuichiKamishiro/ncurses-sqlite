@@ -28,7 +28,8 @@ public:
     void quit();
     std::string selectionTable();
     void printInfoFromTable(std::string);
-    void insertValuesIntoTable();
+    std::pair<std::string, int> parse(std::vector<std::string>, std::vector<std::string>);
+    void insertValuesIntoTable(std::string);
     void startMenu();
     void run();
 };

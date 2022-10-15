@@ -4,10 +4,39 @@
 
 Application::Application(std::string nameOfDatabase) : db(nameOfDatabase, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE) {}
 
+void Application::init()
+{
+    initscr();
+
+    cbreak();
+    noecho();
+    keypad(stdscr, 1);
+    timeout(0);
+    curs_set(0);
+
+    start_color();
+}
+
 void Application::quit()
 {
     startMenuShouldClose = 1;
     windowShouldClose = 1;
+}
+
+std::string Application::selectionTable()
+{
+    clear();
+    echo();
+
+    timeout(-1);
+
+    mvprintw(1, 1, "Enter table name: ");
+
+    char *bufStr = new char[64];
+    
+    getstr(bufStr);
+
+    return bufStr;
 }
 
 void Application::printInfoFromTable(std::string nameOfTable)
@@ -39,48 +68,74 @@ void Application::printInfoFromTable(std::string nameOfTable)
     
     refresh();
 
-    timeout(-1);
     getch();
 
     quit();
 }
 
-void Application::insertValuesIntoTable()
+std::pair<std::string, int> Application::parse(std::vector<std::string> names, std::vector<std::string> types)
 {
-    
+    std::string dataOutput;
+    int lastRow = 1;
+
+    for(int i = 0; i < types.size(); ++i)
+    {
+        char *enterStr = new char[32];
+        if(types[i] == "INTEGER")
+        {
+            std::string  bufStr = "Enter " + names[i] + "(INTEGER) - ";
+            mvprintw(1 + i, 1, bufStr.c_str()); getstr(enterStr); dataOutput += enterStr; dataOutput += ", ";
+        }
+        else if(types[i] == "TEXT")
+        {
+            std::string  bufStr = "Enter " + names[i] + "(TEXT) - ";
+            mvprintw(1 + i, 1, bufStr.c_str()); getstr(enterStr); dataOutput += "'"; dataOutput += enterStr; dataOutput += "', ";
+        }
+        lastRow += 1;
+    }
+    return {dataOutput, lastRow}; 
 }
 
-void Application::init()
-{
-    initscr();
-
-    cbreak();
-    noecho();
-    keypad(stdscr, 1);
-    timeout(0);
-    curs_set(0);
-
-    start_color();
-}
-
-std::string Application::selectionTable()
+void Application::insertValuesIntoTable(std::string nameOfTable)
 {
     clear();
-    echo();
 
-    timeout(-1);
+    std::string execStr;
 
-    mvprintw(1, 1, "Enter table name: ");
+    SQLite::Statement typeQuery(db, "SELECT type FROM PRAGMA_TABLE_INFO('" + nameOfTable + "');");
+    SQLite::Statement nameQuery(db, "SELECT name FROM PRAGMA_TABLE_INFO('" + nameOfTable + "');");
 
-    char *bufStr = new char[64];
+    std::vector<std::string> types;
+    std::vector<std::string> names;
+
+    while(typeQuery.executeStep())
+    {
+        for(int i = 0; i < typeQuery.getColumnCount(); ++i)
+        {
+            types.push_back(typeQuery.getColumn(i));
+        }
+    }
     
-    getstr(bufStr);
+    while(nameQuery.executeStep())
+    {
+        for(int i = 0; i < nameQuery.getColumnCount(); ++i)
+        {
+            names.push_back(nameQuery.getColumn(i));
+        }
+    }
 
-    timeout(0);
+    auto p = parse(names, types);
+    execStr = p.first;
 
-    return bufStr;
+    execStr.pop_back(); execStr.pop_back();
+    int result = db.exec("INSERT INTO t VALUES(" + execStr + ");"); 
+
+    noecho();
+    mvprintw(p.second, 1, "Press any key to quit");
+    getch();
+
+    quit();
 }
-
 
 void Application::startMenu()
 {
@@ -98,6 +153,7 @@ void Application::startMenu()
         if(key == KEY_DOWN && currentElement != maxElement) ++currentElement;
         if(key == 10 && choicesForMenu[currentElement] == "Quit") quit();
         if(key == 10 && choicesForMenu[currentElement] == "Print All") printInfoFromTable(selectionTable());
+        if(key == 10 && choicesForMenu[currentElement] == "Insert Values") insertValuesIntoTable(selectionTable());
 
         for(int i = 0; i < choicesForMenu.size(); ++i)
         {
