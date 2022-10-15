@@ -12,3 +12,6 @@ cmake .. && make
 ```
 cd build/ && ./run
 ```
+
+# Note
+## Add your db file in the same dir with binary.
