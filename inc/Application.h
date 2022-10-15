@@ -12,7 +12,6 @@ class Application
 private:
     SQLite::Database db;
     
-    bool windowShouldClose = false;
     bool startMenuShouldClose = false;
 
     std::vector<std::string> choicesForMenu =
@@ -28,7 +27,7 @@ public:
     void quit();
     std::string selectionTable();
     void printInfoFromTable(std::string);
-    std::pair<std::string, int> parse(std::vector<std::string>, std::vector<std::string>);
+    std::string parse(std::vector<std::string>, std::vector<std::string>);
     void insertValuesIntoTable(std::string);
     void startMenu();
     void run();

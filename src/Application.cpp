@@ -20,14 +20,12 @@ void Application::init()
 void Application::quit()
 {
     startMenuShouldClose = 1;
-    windowShouldClose = 1;
 }
 
 std::string Application::selectionTable()
 {
     clear();
     echo();
-
     timeout(-1);
 
     mvprintw(1, 1, "Enter table name: ");
@@ -35,13 +33,14 @@ std::string Application::selectionTable()
     char *bufStr = new char[64];
     
     getstr(bufStr);
-
+    
     return bufStr;
 }
 
 void Application::printInfoFromTable(std::string nameOfTable)
 {
     clear();
+    noecho();
 
     SQLite::Statement query(db, "select * from " + nameOfTable);
 
@@ -67,16 +66,15 @@ void Application::printInfoFromTable(std::string nameOfTable)
     }
     
     refresh();
-
     getch();
 
-    quit();
+    timeout(0);
+    clear();
 }
 
-std::pair<std::string, int> Application::parse(std::vector<std::string> names, std::vector<std::string> types)
+std::string Application::parse(std::vector<std::string> names, std::vector<std::string> types)
 {
     std::string dataOutput;
-    int lastRow = 1;
 
     for(int i = 0; i < types.size(); ++i)
     {
@@ -91,9 +89,8 @@ std::pair<std::string, int> Application::parse(std::vector<std::string> names, s
             std::string  bufStr = "Enter " + names[i] + "(TEXT) - ";
             mvprintw(1 + i, 1, bufStr.c_str()); getstr(enterStr); dataOutput += "'"; dataOutput += enterStr; dataOutput += "', ";
         }
-        lastRow += 1;
     }
-    return {dataOutput, lastRow}; 
+    return dataOutput;
 }
 
 void Application::insertValuesIntoTable(std::string nameOfTable)
@@ -124,17 +121,14 @@ void Application::insertValuesIntoTable(std::string nameOfTable)
         }
     }
 
-    auto p = parse(names, types);
-    execStr = p.first;
+    execStr = parse(names, types);
 
     execStr.pop_back(); execStr.pop_back();
     int result = db.exec("INSERT INTO t VALUES(" + execStr + ");"); 
-
+    
+    timeout(0);
     noecho();
-    mvprintw(p.second, 1, "Press any key to quit");
-    getch();
-
-    quit();
+    clear();
 }
 
 void Application::startMenu()
@@ -172,11 +166,5 @@ void Application::run()
 {
     init();
     startMenu();
-
-    while(!windowShouldClose)
-    {
-
-    }
-
     endwin();
 }
