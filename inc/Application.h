@@ -18,7 +18,8 @@ private:
     { 
       "Quit",
       "Print All",
-      "Insert Values"
+      "Insert Values",
+      "Delete Info From Table",
     };
 public:
     Application(std::string);
@@ -29,6 +30,8 @@ public:
     void printInfoFromTable(std::string);
     std::string parse(std::vector<std::string>, std::vector<std::string>);
     void insertValuesIntoTable(std::string);
+    void deleteInfoFromTable(std::string);
+    void drawMenu(int);
     void startMenu();
     void run();
 };

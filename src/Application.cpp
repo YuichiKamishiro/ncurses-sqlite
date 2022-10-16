@@ -1,8 +1,7 @@
 #include "../inc/Application.h"
-#include <cstddef>
 #include <curses.h>
 
-Application::Application(std::string nameOfDatabase) : db(nameOfDatabase, SQLite::OPEN_READWRITE|SQLite::OPEN_CREATE) {}
+Application::Application(std::string nameOfDatabase) : db(nameOfDatabase, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {}
 
 void Application::init()
 {
@@ -122,13 +121,34 @@ void Application::insertValuesIntoTable(std::string nameOfTable)
     }
 
     execStr = parse(names, types);
-
-    execStr.pop_back(); execStr.pop_back();
-    int result = db.exec("INSERT INTO t VALUES(" + execStr + ");"); 
+    
+    int result = db.exec("INSERT INTO t VALUES(" + execStr.substr(0, execStr.size() - 2) + ");"); 
     
     timeout(0);
     noecho();
     clear();
+}
+
+void Application::deleteInfoFromTable(std::string nameOfTable)
+{
+    db.exec("DELETE FROM " + nameOfTable);
+
+    clear();
+}
+
+void Application::drawMenu(int currentElement)
+{
+    for(int i = 0; i < choicesForMenu.size(); ++i)
+    {
+        if(currentElement == i)
+        {
+            attron(COLOR_PAIR(SELECT_COLOR_PAIR));
+            mvprintw(i, 1, choicesForMenu[i].c_str());
+            attroff(COLOR_PAIR(SELECT_COLOR_PAIR));
+            continue;
+        }
+        mvprintw(i, 1, choicesForMenu[i].c_str());
+    }
 }
 
 void Application::startMenu()
@@ -145,20 +165,13 @@ void Application::startMenu()
         
         if(key == KEY_UP && currentElement != minElement) --currentElement;
         if(key == KEY_DOWN && currentElement != maxElement) ++currentElement;
+
         if(key == 10 && choicesForMenu[currentElement] == "Quit") quit();
         if(key == 10 && choicesForMenu[currentElement] == "Print All") printInfoFromTable(selectionTable());
         if(key == 10 && choicesForMenu[currentElement] == "Insert Values") insertValuesIntoTable(selectionTable());
+        if(key == 10 && choicesForMenu[currentElement] == "Delete Info From Table") deleteInfoFromTable(selectionTable());
 
-        for(int i = 0; i < choicesForMenu.size(); ++i)
-        {
-            if(currentElement == i)
-            {
-                attron(COLOR_PAIR(SELECT_COLOR_PAIR));
-                mvprintw(i, 1, choicesForMenu[i].c_str());
-                attroff(COLOR_PAIR(SELECT_COLOR_PAIR));
-            }
-            else mvprintw(i, 1, choicesForMenu[i].c_str());
-        }
+        drawMenu(currentElement);
     }
 }
 
