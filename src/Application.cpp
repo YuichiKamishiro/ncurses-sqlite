@@ -28,16 +28,27 @@ std::string Application::selectionTable()
     timeout(-1);
 
     mvprintw(1, 1, "Enter table name: ");
-
     char *bufStr = new char[64];
     
     getstr(bufStr);
     
-    return bufStr;
+    if(db.tableExists(bufStr)) 
+    {
+        return bufStr;
+    }
+    
+    clear(); 
+    mvprintw(1, 1, "Table doen't exist!");
+    
+    getch();
+    quit();
+    return "";
 }
 
 void Application::printInfoFromTable(std::string nameOfTable)
 {
+    if(startMenuShouldClose) return;
+    
     clear();
     noecho();
 
@@ -94,6 +105,8 @@ std::string Application::parse(std::vector<std::string> names, std::vector<std::
 
 void Application::insertValuesIntoTable(std::string nameOfTable)
 {
+    if(startMenuShouldClose) return;
+
     clear();
 
     std::string execStr;
@@ -131,6 +144,8 @@ void Application::insertValuesIntoTable(std::string nameOfTable)
 
 void Application::deleteInfoFromTable(std::string nameOfTable)
 {
+    if(startMenuShouldClose) return;
+
     db.exec("DELETE FROM " + nameOfTable);
 
     clear();
