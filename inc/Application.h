@@ -1,5 +1,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 
+#include <fmt/core.h>
+
 #include <curses.h>
 #include <vector>
 #include <string>

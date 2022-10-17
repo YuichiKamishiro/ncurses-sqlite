@@ -27,22 +27,46 @@ std::string Application::selectionTable()
     echo();
     timeout(-1);
 
-    mvprintw(1, 1, "Enter table name: ");
+    SQLite::Statement query(db, "select name from sqlite_master where type == 'table';");
+    
+    std::string strAllTables;
+
+    while(query.executeStep())
+    {
+        for(int i = 0; i < query.getColumnCount(); ++i)
+        {   
+            SQLite::Column column = query.getColumn(i);
+            strAllTables += column.getString() + " ";
+        }
+    }
+
+    if(strAllTables.empty())
+    {
+        clear();
+        mvprintw(0, 1, "No Tables Created");
+
+        getch();
+        quit();
+        return "";
+    }
+
+    mvprintw(0, 1, strAllTables.c_str());
+    mvprintw(2, 1, "Enter table name: ");
     char *bufStr = new char[64];
     
     getstr(bufStr);
     
-    if(db.tableExists(bufStr)) 
+    if(!db.tableExists(bufStr)) 
     {
-        return bufStr;
+        clear(); 
+        mvprintw(1, 1, "Table doen't exist!");
+    
+        getch();
+        quit();
+        return "";
     }
     
-    clear(); 
-    mvprintw(1, 1, "Table doen't exist!");
-    
-    getch();
-    quit();
-    return "";
+    return bufStr;
 }
 
 void Application::printInfoFromTable(std::string nameOfTable)
@@ -53,15 +77,16 @@ void Application::printInfoFromTable(std::string nameOfTable)
     noecho();
 
     SQLite::Statement query(db, "select * from " + nameOfTable);
-
-    int columnCount = query.getColumnCount();
     
-    if(columnCount <= 0) quit();
+    int columnCount = query.getColumnCount();
 
     int offsetY = 0;
 
+    bool wasExecuted = false;
+
     while(query.executeStep())
     {
+        if(!wasExecuted) wasExecuted = true;
         for(int i = 0; i < columnCount; ++i)
         {
             SQLite::Column column(query.getColumn(i));
@@ -75,6 +100,11 @@ void Application::printInfoFromTable(std::string nameOfTable)
         ++offsetY;
     }
     
+    if(wasExecuted == false)
+    {
+        mvprintw(1, 1, "No Information");
+    }
+
     refresh();
     getch();
 
@@ -110,32 +140,24 @@ void Application::insertValuesIntoTable(std::string nameOfTable)
     clear();
 
     std::string execStr;
-
-    SQLite::Statement typeQuery(db, "SELECT type FROM PRAGMA_TABLE_INFO('" + nameOfTable + "');");
-    SQLite::Statement nameQuery(db, "SELECT name FROM PRAGMA_TABLE_INFO('" + nameOfTable + "');");
-
-    std::vector<std::string> types;
+    
     std::vector<std::string> names;
+    std::vector<std::string> types;
 
-    while(typeQuery.executeStep())
+    SQLite::Statement query(db, "select * from " + nameOfTable + ";");
+
+    int columnsCount = query.getColumnCount();
+
+    query.executeStep();
+    for(int i = 0; i < columnsCount; ++i)
     {
-        for(int i = 0; i < typeQuery.getColumnCount(); ++i)
-        {
-            types.push_back(typeQuery.getColumn(i));
-        }
+        names.push_back(query.getColumnName(i));
+        types.push_back(query.getColumnDeclaredType(i));
     }
     
-    while(nameQuery.executeStep())
-    {
-        for(int i = 0; i < nameQuery.getColumnCount(); ++i)
-        {
-            names.push_back(nameQuery.getColumn(i));
-        }
-    }
-
     execStr = parse(names, types);
-    
-    int result = db.exec("INSERT INTO t VALUES(" + execStr.substr(0, execStr.size() - 2) + ");"); 
+
+    db.exec("insert into " + nameOfTable + " values(" + execStr.substr(0, execStr.size() - 2) + ");"); 
     
     timeout(0);
     noecho();
@@ -181,10 +203,22 @@ void Application::startMenu()
         if(key == KEY_UP && currentElement != minElement) --currentElement;
         if(key == KEY_DOWN && currentElement != maxElement) ++currentElement;
 
-        if(key == 10 && choicesForMenu[currentElement] == "Quit") quit();
-        if(key == 10 && choicesForMenu[currentElement] == "Print All") printInfoFromTable(selectionTable());
-        if(key == 10 && choicesForMenu[currentElement] == "Insert Values") insertValuesIntoTable(selectionTable());
-        if(key == 10 && choicesForMenu[currentElement] == "Delete Info From Table") deleteInfoFromTable(selectionTable());
+        if(key == 10 && choicesForMenu[currentElement] == "Quit")
+        {
+            quit();
+        }
+        if(key == 10 && choicesForMenu[currentElement] == "Print All")
+        {
+            printInfoFromTable(selectionTable());
+        }
+        if(key == 10 && choicesForMenu[currentElement] == "Insert Values")
+        {
+            insertValuesIntoTable(selectionTable());
+        }
+        if(key == 10 && choicesForMenu[currentElement] == "Delete Info From Table")
+        {
+            deleteInfoFromTable(selectionTable());
+        }
 
         drawMenu(currentElement);
     }
