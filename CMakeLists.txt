@@ -12,7 +12,7 @@ project(sqlite-ncurses)
 
 add_subdirectory(SQLiteCpp)
 
-add_executable(run src/Main.cpp src/Application.cpp)
+add_executable(run src/Main.cpp src/Menu.cpp src/Application.cpp)
 
 target_link_libraries(run
   SQLiteCpp
